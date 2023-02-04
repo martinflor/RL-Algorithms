@@ -19,7 +19,7 @@ gamma = 0.5
 
 env = gym.make("MountainCar-v0")
 
-discrete_obs_space_size = [20] *len(env.observation_space.high) # [20,20] -> 20 separations for each observations
+discrete_obs_space_size = [200] *len(env.observation_space.high) # [20,20] -> 20 separations for each observations
 discrete_obs_range_step = (env.observation_space.high-env.observation_space.low)/discrete_obs_space_size
 
 def moutainCar(policy):
@@ -62,47 +62,40 @@ def transition_probabilities():
         for j in range(discrete_obs_space_size[1]): # For Loops : (i,j) = state_ij
             for k in range(env.action_space.n):
                 xt, vt = get_continuous_state((i,j))
-                new_state = get_discrete_state(transition_dynamics(k, xt, vt))
-                states_to_states_prime[(i,j,new_state[0], new_state[1], k)] = 1.
-                #1/(discrete_obs_space_size[0]**2)
+                new_state_ = transition_dynamics(k, xt, vt)
+                new_state = get_discrete_state(new_state_)
+                reward = -1
+                if new_state_[0] >= 0.5:
+                    reward = 0
+                states_to_states_prime[(i,j, new_state[0], new_state[1], k)] = (reward, 1)
                 
     return states_to_states_prime
     
 
 
-def policy_evaluation(policy, theta = 0.01):
-    V = np.zeros((discrete_obs_space_size[0], discrete_obs_space_size[1]), dtype=int)
+def policy_evaluation(policy, gamma = 0.9, theta = 0.01):
+    V = np.zeros((discrete_obs_space_size[0], discrete_obs_space_size[1]), dtype=np.float64)
     delta = 0
-    
-    # Transitions Probabilities
-    tr_prob = transition_probabilities()
+    probs = transition_probabilities()
     
     while True :
         for i in range(discrete_obs_space_size[0]):
-            for j in range(discrete_obs_space_size[1]): # For Loops on state
+            for j in range(discrete_obs_space_size[1]):
                 v = V[i,j]
                 tmp = 0.
                 for i_prime in range(discrete_obs_space_size[0]):
-                    for j_prime in range(discrete_obs_space_size[1]): # For Loop on state prime
-                        try :
-                            tr = tr_prob[(i, j, i_prime, j_prime, policy[i,j])]
-                        except :
-                            tr = 0.
+                    for j_prime in range(discrete_obs_space_size[1]):
+                        if (i, j, i_prime, j_prime, policy[i,j]) in probs:
+                            reward, tr = probs[(i, j, i_prime, j_prime, policy[i,j])]
+                            tmp +=  tr*(reward+gamma*V[i_prime,j_prime])
                             
-                        if (i_prime == 19) and (j_prime == 19):
-                            reward = 0
-                        else:
-                            reward = -1
-                            
-                        tmp +=  tr*(reward+gamma*V[i_prime,j_prime])
-                        
                 V[i,j] = tmp
                 
                 delta = max(delta, np.abs(v - V[i,j]))
-                print(delta)
+        
+        print(delta)
         if delta < theta : 
             break
-                
                 
     return V
 
@@ -141,7 +134,7 @@ def policy_iteration():
     V = policy_evaluation(policy)
     stable = False
     limit = 100
-    """
+    
     count = 0
     t0 = time.time()
     while not stable and count < limit :
@@ -163,7 +156,7 @@ def policy_iteration():
     print(f"Time needed : {t1-t0}s")
     
     return V, policy
-    """
+    
 
 
 
