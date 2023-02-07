@@ -15,9 +15,9 @@ import time
 
 
 
-gamma = 0.5
+gamma = 0.9
 REWARD = 100
-quantization = 20
+quantization = 50
 
 env = gym.make("MountainCar-v0")
 
@@ -33,9 +33,17 @@ def mountainCar(policy):
     done = False
     
     while not done : 
-    
+        """
+        tmp = policy[discrete_state]
+        
         chosen_action = np.argwhere(tmp==np.max(tmp)).flatten()
+        if len(chosen_action) > 1:
+            action = np.random.choice(chosen_action)
+        else:
+            action = chosen_action[0]
+        """
         action = np.argmax(policy[discrete_state])
+        print(action)
         new_state, reward, done, _ = env.step(action) # observation, reward, terminated
         new_discrete_state = get_discrete_state(new_state)
         env.render(mode='rgb_array')
@@ -78,18 +86,18 @@ def transition_probabilities():
                 if next_state_[0] >= 0.5:
                     reward = 0
                     
-                actions[k] = [(1/3, next_state, reward, 1 if reward == 0 else 0)]
+                actions[k] = [(1, next_state, reward, True if reward == 0 else False)]
             
             P[state] = actions
                 
     return P
     
 
-def policy_evaluation(policy, P, gamma = 1., theta = 1e-8):
+def policy_evaluation(policy, P, gamma = .9, theta = 1e-4):
     
     V = np.zeros(nS, dtype=np.float64)
     
-    while True :
+    while True:
         delta = 0
         for state in range(nS):
                 tmp = 0.
@@ -99,14 +107,15 @@ def policy_evaluation(policy, P, gamma = 1., theta = 1e-8):
                 
                 delta = max(delta, np.abs(tmp - V[state]))
                 V[state] = tmp
-                
-                
+                print(delta)
+
         if delta < theta : 
             break
                 
     return V
 
-def policy_improvement(V, P, gamma = 1.):
+
+def policy_improvement(V, P, gamma = .9):
     
     policy = np.zeros((nS, nA), dtype=np.float64)
     
@@ -129,8 +138,8 @@ count = 0
 
 while True and count < 10000:
     t0 = time.time()
-    V = policy_evaluation(policy, P)
-    updated_policy = policy_improvement(V, P)
+    V = policy_evaluation(policy, P, gamma = gamma)
+    updated_policy = policy_improvement(V, P, gamma = gamma)
     t1 = time.time()
     count += 1
     print(f"Iteration {count} performed in {t1-t0}s")
@@ -140,3 +149,7 @@ while True and count < 10000:
         break
     
     policy = np.copy(updated_policy)
+
+
+plt.figure(figsize=(4,16))
+plt.imshow(policy)

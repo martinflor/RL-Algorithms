@@ -49,6 +49,7 @@ def policy_evaluation(env, policy, gamma = 1., theta = 1e-8):
                 
     return V
 
+
 def policy_improvement(env, V, gamma = 1.):
     
     policy = np.zeros((nS, nA), dtype=np.float64)

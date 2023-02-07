@@ -43,11 +43,11 @@ env = gym.make("MountainCar-v0")
 #env.reset() # Anytime we have an env, reset it
 
 
-lr = 0.01
+lr = 0.1
 gamma = 0.95
 EPISODES = 25_000
 
-SHOW_EVERY = 5000
+SHOW_EVERY = 500
 ANIM = False
 
 
@@ -66,7 +66,7 @@ observations are (position, velocity)
 """
 
 
-epsilon = 0.5
+epsilon = 0.2
 START_EPSILON_DECAYING = 1
 END_EPSILON_DECAYING   = EPISODES//2
 DECAY_RATE = epsilon/(END_EPSILON_DECAYING-START_EPSILON_DECAYING)
@@ -96,7 +96,6 @@ for episode in range(EPISODES) :
     episode_reward = 0
     
     if episode % SHOW_EVERY == 0 :
-        print(episode)
         render = True
         
     else :
@@ -149,6 +148,14 @@ env.close()
 
 if ANIM :
     imageio.mimwrite(os.path.join('./video/', 'random_agent.gif'), frames, fps=60)
+
+
+
+import pickle
+
+with open('reward_q_learning.pickle', 'wb') as file:
+    pickle.dump(dic_ep_rewards, file)
+
 
 
 
